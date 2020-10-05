@@ -13,18 +13,19 @@ using FuncprodAPI.Models.Data;
 
 namespace FuncprodAPI
 {
-    public class FunctiontogetProducts
+    public class FunctionProducts
     {
         public  ProductDbContext _context;
        
 
-        public FunctiontogetProducts(ProductDbContext context)
+        public FunctionProducts(ProductDbContext context)
         {
             _context = context;
         }
+       
         [FunctionName("FunctGetProducts")]
         public IActionResult GetProducts(
-           [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "get")] HttpRequest req,
+           [HttpTrigger(AuthorizationLevel.Anonymous, "GET")] HttpRequest req,
            ILogger log)
         {
             log.LogInformation("C# HTTP GET trigger function processed a request.");
@@ -35,10 +36,11 @@ namespace FuncprodAPI
 
         }
 
-        
+ //******************************************************************************************
+
         [FunctionName("FunctPostProducts")]    
         public async Task<IActionResult> PostProducts(
-           [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "post")] HttpRequest req,
+           [HttpTrigger(AuthorizationLevel.Anonymous, "POST")] HttpRequest req,
            ILogger log)
         {
             
@@ -72,6 +74,43 @@ namespace FuncprodAPI
 
         }
 
-        
+//******************************************************************************************
+
+        [FunctionName("FuncUpdateProducts")]
+        public async Task<IActionResult> UpdateProducts(
+          [HttpTrigger(AuthorizationLevel.Anonymous, "PUT")] HttpRequest req,
+          ILogger log)
+        {
+
+            log.LogInformation("C# HTTP PUT trigger function processed a request.");
+
+
+            string reqBody = await new StreamReader(req.Body).ReadToEndAsync();
+
+            // use Json.NET to deserialize the posted JSON into a C# dynamic object
+            Product data = JsonConvert.DeserializeObject<Product>(reqBody);
+
+            var todo = await _context.Productdetails.FindAsync(data.ProductId);
+            if (todo == null)
+            {
+                log.LogWarning($"Item {data.ProductId} not found");
+                return new NotFoundResult();
+            }
+
+            todo.ProductId = data.ProductId;
+            if (data.ProductId != 0)
+            {
+                todo.ProductName = data.ProductName;
+                todo.Quantity = data.Quantity;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return new OkObjectResult(todo);
+
+
+        }
+
+
     }
 }
